@@ -1,13 +1,28 @@
 import TextInputBar from '@/components/chat/TextInputArea';
+import VoiceAnimation from '@/components/chat/VoiceAnimation';
+import { ChatProvider, useChatConversationContext } from '@/hooks/chat/useChatConversationContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Keyboard, StyleSheet, TouchableWithoutFeedback } from 'react-native';
 import { ChatConversation } from './ChatConversation';
 import { EmptyChatState } from './EmptyChatState';
 
-export default function ChatScreen() {
 
-  const isConversationEmpty = false; // Placeholder for conversation state
+export default function ChatScreen() {
+  return (
+    <ChatProvider>
+      <ChatScreenContent />
+    </ChatProvider>)
+}
+
+
+export function ChatScreenContent() {
+
+  const { hasStartedConversation } = useChatConversationContext();
+
+  const body = hasStartedConversation ? <ChatConversation /> : <EmptyChatState />;
+  const footer = hasStartedConversation ? <VoiceAnimation /> : <TextInputBar />;
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <LinearGradient
@@ -17,10 +32,8 @@ export default function ChatScreen() {
         end={{ x: 0.9, y: 1 }}
         style={styles.container}
       >
-
-        {isConversationEmpty ? <EmptyChatState /> : <ChatConversation />}
-
-        <TextInputBar />
+        {body}
+        {footer}
       </LinearGradient>
     </TouchableWithoutFeedback>
   );

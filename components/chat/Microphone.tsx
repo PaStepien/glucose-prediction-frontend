@@ -1,10 +1,15 @@
+import { useChatConversationContext } from "@/hooks/chat/useChatConversationContext";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, TouchableOpacity } from "react-native";
 
-export default function Microphone() {
+export default function Microphone({handleDetectedText} : {handleDetectedText: (detectedText: string) => void}) {
+    const { setHasStartedConversation } = useChatConversationContext();
+    
     const handleMicPress = () => {
-        console.log('Mic button pressed');
+        const detectedText = "Simulated detected text from microphone";
+        handleDetectedText(detectedText);
+        setHasStartedConversation(true); 
     };
     return (
         <TouchableOpacity style={styles.micButton} onPress={handleMicPress}>

@@ -13,7 +13,7 @@ export default function WelcomeMessage() {
 
 const styles = StyleSheet.create({
     greetingContainer: {
-        marginTop: 80,
+        marginTop: 120,
         alignItems: 'center',
         paddingHorizontal: 32,
     },
@@ -21,7 +21,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#8b8bb0',
         fontWeight: '400',
-        marginBottom: 4,
+        marginBottom: 10,
     },
     greetingMain: {
         fontSize: 26,

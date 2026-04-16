@@ -1,24 +1,31 @@
+import Feather from '@expo/vector-icons/Feather';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const suggestions = [
-    {icon: '⏰', label: "What will my blood sugar be in 2 hours?"},
-    {icon: '🍌', label: "Can I eat a banana now?"},
-    {icon: '📈', label: "Explain my spike in blood sugar at 3 PM yesterday."},
-    {icon: '❓', label: "What is the cause of diabetes?"},
-    {icon: '😊', label: "I'm feeling sad, can you cheer me up?"},
-]
+    { iconItem: <Ionicons name="alarm-outline" size={24} color="#b8a8f0" />, label: "What will my blood sugar be in 2 hours?" },
+    { iconItem: <MaterialCommunityIcons name="silverware-fork-knife" size={24} color="#b8a8f0" />, label: "Can I eat a banana now?" },
+    { iconItem: <Feather name="trending-up" size={24} color="#b8a8f0" />, label: "Explain my spike in blood sugar at 3 PM yesterday." },
+    { iconItem: <Feather name="help-circle" size={24} color="#b8a8f0" />, label: "What is the cause of diabetes?" },
+    { iconItem: <MaterialIcons name="support-agent" size={24} color="#b8a8f0" />, label: "I'm feeling sad, can you cheer me up?" },
+];
 
 export default function AssistantSuggestions() {
     return (
         <View style={styles.chipsContainer}>
-            <Text style={styles.chipHeader}>I'm  <Text style={styles.chipHeaderBold}>PAM</Text>, your virtual diabetes assistant{'\n'}I can help you with:</Text>
+            <Text style={styles.chipHeader}>I'm  <Text style={styles.chipHeaderBold}>PAM</Text>, your virtual diabetes assistant</Text>
+            <Text style={styles.chipHeader}>Here are some things you can ask me:</Text>
             {suggestions.map((item, index) => (
                 <TouchableOpacity
                     key={index}
                     style={styles.chip}
                 >
-                    <Text style={styles.chipIcon}>{item.icon}</Text>
-                    <Text style={styles.chipText} numberOfLines={1}>{item.label}</Text>
+                        
+                    {item.iconItem}
+                    <Text style={styles.chipText}>{item.label}</Text>
                 </TouchableOpacity>
             ))}
         </View>
@@ -48,6 +55,7 @@ const styles = StyleSheet.create({
         paddingVertical: 7,
         paddingHorizontal: 12,
         gap: 6,
+        marginTop: 6,
         width: '100%',
     },
     chipIcon: {
@@ -57,11 +65,13 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#5a4e8a',
         fontWeight: '600',
-        marginBottom: 6,
+        marginBottom: 2,
     },
     chipText: {
+        marginLeft: 4,
         fontSize: 12,
         color: '#5a4e8a',
+        flexShrink: 1,
         fontWeight: '500',
     },
     chipHeaderBold: {

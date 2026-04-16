@@ -11,6 +11,17 @@ import SubmitInput from './SubmitInput';
 export default function TextInputArea() {
     const [textInput, setText] = React.useState('');
 
+    const handleSubmit = () => {
+        // Handle the submission of the text input here
+        console.log('Submitted:', textInput);
+        setText('');
+    }
+
+    const handleDetectedText = (detectedText: string) => {
+        console.log('Detected text from microphone:', detectedText);
+        setText(detectedText);
+    }
+
     return (
         <KeyboardAvoidingView
             behavior="padding"
@@ -24,7 +35,7 @@ export default function TextInputArea() {
                     placeholder="Ask me anything..."
                     placeholderTextColor="#a99fc4"
                 />
-                {textInput.length === 0 ? <Microphone /> : <SubmitInput />}
+                {textInput.length === 0 ? <Microphone handleDetectedText={handleDetectedText}/> : <SubmitInput handleSubmit={handleSubmit} />}
             </View>
         </KeyboardAvoidingView>
     );
