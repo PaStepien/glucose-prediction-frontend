@@ -1,12 +1,13 @@
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { StyleSheet, TouchableOpacity } from "react-native";
+import { Keyboard, StyleSheet, TouchableOpacity } from "react-native";
 
 export default function SubmitInput() {
     const submitInput = () => {
         // Handle submit input (e.g., send message)
         console.log('Submit button pressed');
+        Keyboard.dismiss(); // Dismiss the keyboard after submitting
     };
     return (
         <TouchableOpacity style={styles.submitButton} onPress={submitInput}>
@@ -14,7 +15,7 @@ export default function SubmitInput() {
                 colors={['#b8a8f0', '#e8a8d8']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={styles.submitButton}
+                style={styles.submitButton}                
             >
                 <AntDesign name="send" size={20} color="white" />
             </LinearGradient>

@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 const userName = 'Pawel';
 
-export default function Greetings() {
+export default function WelcomeMessage() {
     return (
         <View style={styles.greetingContainer}>
             <Text style={styles.greetingSub}>Hello, {userName}!</Text>

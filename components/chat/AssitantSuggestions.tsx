@@ -11,7 +11,7 @@ const suggestions = [
 export default function AssistantSuggestions() {
     return (
         <View style={styles.chipsContainer}>
-            <Text style={styles.chipHeader}>I'm  <b>PAM</b>, your virtual diabetes assistant{'\n'}I can help you with:</Text>
+            <Text style={styles.chipHeader}>I'm  <Text style={styles.chipHeaderBold}>PAM</Text>, your virtual diabetes assistant{'\n'}I can help you with:</Text>
             {suggestions.map((item, index) => (
                 <TouchableOpacity
                     key={index}
@@ -63,5 +63,8 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#5a4e8a',
         fontWeight: '500',
+    },
+    chipHeaderBold: {
+        fontWeight: '700',
     },
 });
