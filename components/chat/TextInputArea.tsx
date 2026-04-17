@@ -19,6 +19,13 @@ export default function TextInputArea() {
 
     const handleDetectedText = (detectedText: string) => {
         console.log('Detected text from microphone:', detectedText);
+        //Speech.speak(detectedText, { voice: 'com.apple.voice.super-compact.en-US.Samantha' });
+
+        // Speech.getAvailableVoicesAsync().then(voices => {
+        //     voices.filter(voice => voice.language === 'en-US').forEach(voice => {
+        //         console.log(`Voice: ${voice.name}, Identifier: ${voice.identifier}, Quality; ${voice.quality}`);
+        //     });
+        // });
         setText(detectedText);
     }
 

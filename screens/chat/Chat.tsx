@@ -18,13 +18,21 @@ export default function ChatScreen() {
 
 export function ChatScreenContent() {
 
-  const { hasStartedConversation } = useChatConversationContext();
+  const { hasStartedConversation, setHasStartedConversation, voiceInputActivated,setVoiceInputActivated } = useChatConversationContext();
 
   const body = hasStartedConversation ? <ChatConversation /> : <EmptyChatState />;
-  const footer = hasStartedConversation ? <VoiceAnimation /> : <TextInputBar />;
+  const footer = hasStartedConversation ? <VoiceAnimation isActive={voiceInputActivated} /> : <TextInputBar />;
+
+  const touchedOutsideInput = () => {
+    Keyboard.dismiss();
+    if(voiceInputActivated){
+      setVoiceInputActivated(false);
+      setHasStartedConversation(false);
+    }
+  }
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+    <TouchableWithoutFeedback onPress={() => touchedOutsideInput()} accessible={false}>
       <LinearGradient
         colors={['#dde8fb', '#e8d6f5', '#f5d6ee', '#dce9fc']}
         locations={[0, 0.35, 0.65, 1]}
