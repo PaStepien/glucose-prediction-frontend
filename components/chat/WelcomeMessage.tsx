@@ -16,6 +16,7 @@ const styles = StyleSheet.create({
         marginTop: 120,
         alignItems: 'center',
         paddingHorizontal: 32,
+        marginBottom: 48,
     },
     greetingSub: {
         fontSize: 16,

@@ -1,17 +1,11 @@
-import { useChatConversationContext } from '@/hooks/chat/useChatConversationContext';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { Keyboard, StyleSheet, TouchableOpacity } from "react-native";
 
 export default function SubmitInput({ handleSubmit }: { handleSubmit: () => void }) {
-    const { hasStartedConversation, setHasStartedConversation } = useChatConversationContext();
-
     const submitInput = () => {
         Keyboard.dismiss();
-        if (!hasStartedConversation) {
-            setHasStartedConversation(true);
-        }
         handleSubmit();
     };
     return (

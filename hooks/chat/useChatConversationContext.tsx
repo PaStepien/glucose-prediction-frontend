@@ -1,19 +1,35 @@
+import { Message } from '@/constants/chat/message';
 import { createContext, useContext, useState } from 'react';
 
 type ChatContextType = {
-  hasStartedConversation: boolean;
-  setHasStartedConversation: (value: boolean) => void;
   voiceInputActivated: boolean;
   setVoiceInputActivated: (value: boolean) => void;
+  messages: Message[];
+  addMessage: (text: string, role: 'user' | 'assistant') => void;
+  isAssistantThinking: boolean;
+  setIsAssistantThinking: (value: boolean) => void;
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
-  const [hasStartedConversation, setHasStartedConversation] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [voiceInputActivated, setVoiceInputActivated] = useState(false);
+  const [isAssistantThinking, setIsAssistantThinking] = useState(false);
+
+  const addMessage = (text: string, role: 'user' | 'assistant') => {
+    const newMessage: Message = {
+      id: Date.now().toString() + '_' + role,
+      role,
+      text,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+    setMessages(prev => [...prev, newMessage]);
+  }
+
+
   return (
-    <ChatContext.Provider value={{ hasStartedConversation, setHasStartedConversation, voiceInputActivated, setVoiceInputActivated }}>
+    <ChatContext.Provider value={{ voiceInputActivated, setVoiceInputActivated, messages, addMessage, isAssistantThinking, setIsAssistantThinking }}>
       {children}
     </ChatContext.Provider>
   );

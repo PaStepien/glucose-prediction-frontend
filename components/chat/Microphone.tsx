@@ -2,27 +2,21 @@ import { useChatConversationContext } from "@/hooks/chat/useChatConversationCont
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { LinearGradient } from "expo-linear-gradient";
+import { useState } from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 const voiceAssistantSound = require("../../assets/sounds/ding.mp3");
 
 export default function Microphone({ handleDetectedText }: { handleDetectedText: (detectedText: string) => void }) {
-    const { setHasStartedConversation, setVoiceInputActivated } = useChatConversationContext();
+    const { setVoiceInputActivated } = useChatConversationContext();
 
     const audio = useAudioPlayer(voiceAssistantSound);
-    const status = useAudioPlayerStatus(audio);
 
-    const handleMicPress = () => {
-        console.log('Microphone pressed');
-        console.log("Audio status:", status);
+    const handleMicPress = async () => {
         const detectedText = "Hi, I'm PAM, your diabetes voice assistant";
-        setHasStartedConversation(true);
-        setVoiceInputActivated(true);
         audio.seekTo(0)
         audio.play();
 
-        setTimeout(() => {
-            handleDetectedText(detectedText);
-        }, 2000);
+        setVoiceInputActivated(true);
     };
     return (
         <TouchableOpacity style={styles.micButton} onPress={handleMicPress}>

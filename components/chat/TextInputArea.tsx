@@ -1,6 +1,7 @@
+import { askQuestion } from '@/hooks/chat/ask-question';
+import { useChatConversationContext } from '@/hooks/chat/useChatConversationContext';
 import React from 'react';
 import {
-    KeyboardAvoidingView,
     StyleSheet,
     TextInput,
     View
@@ -10,30 +11,22 @@ import SubmitInput from './SubmitInput';
 
 export default function TextInputArea() {
     const [textInput, setText] = React.useState('');
+    const { addMessage, setIsAssistantThinking } = useChatConversationContext();
+   
 
-    const handleSubmit = () => {
-        // Handle the submission of the text input here
-        console.log('Submitted:', textInput);
-        setText('');
-    }
+    const submitMessage = async (message: string, nextInput = '') => {
+        const trimmedMessage = message.trim();
+        if (trimmedMessage.length === 0) {
+            return;
+        }
 
-    const handleDetectedText = (detectedText: string) => {
-        console.log('Detected text from microphone:', detectedText);
-        //Speech.speak(detectedText, { voice: 'com.apple.voice.super-compact.en-US.Samantha' });
-
-        // Speech.getAvailableVoicesAsync().then(voices => {
-        //     voices.filter(voice => voice.language === 'en-US').forEach(voice => {
-        //         console.log(`Voice: ${voice.name}, Identifier: ${voice.identifier}, Quality; ${voice.quality}`);
-        //     });
-        // });
-        setText(detectedText);
-    }
+        addMessage(trimmedMessage, 'user');
+        setText(nextInput);
+        await askQuestion(trimmedMessage, addMessage, setIsAssistantThinking);
+    };
 
     return (
-        <KeyboardAvoidingView
-            behavior="padding"
-            style={styles.inputWrapper}
-        >
+        <View style={styles.inputWrapper}>
             <View style={styles.inputBar}>
                 <TextInput
                     value={textInput}
@@ -42,16 +35,25 @@ export default function TextInputArea() {
                     placeholder="Ask me anything..."
                     placeholderTextColor="#a99fc4"
                 />
-                {textInput.length === 0 ? <Microphone handleDetectedText={handleDetectedText}/> : <SubmitInput handleSubmit={handleSubmit} />}
+                {textInput.length === 0 ? (
+                    <Microphone
+                        handleDetectedText={(detectedText) => submitMessage(detectedText, detectedText.trim())}
+                    />
+                ) : (
+                    <SubmitInput handleSubmit={() => submitMessage(textInput)} />
+                )}
             </View>
-        </KeyboardAvoidingView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     inputWrapper: {
-       marginBottom: 24,
-        width: '100%'
+        marginBottom: 24,
+        width: '100%',
+        paddingTop: 8,
+        paddingInline: 24,
+
     },
     inputBar: {
         flexDirection: 'row',
@@ -73,3 +75,4 @@ const styles = StyleSheet.create({
     },
 
 });
+

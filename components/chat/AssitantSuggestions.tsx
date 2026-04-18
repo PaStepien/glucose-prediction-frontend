@@ -44,6 +44,7 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255, 255, 255, 0.7)',
         padding: 12,
         marginBottom: 10,
+        marginInline: 24,
     },
     chip: {
         flexDirection: 'row',
