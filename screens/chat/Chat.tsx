@@ -6,7 +6,7 @@ import WelcomeMessage from '@/components/chat/WelcomeMessage';
 import { ChatProvider, useChatConversationContext } from '@/hooks/chat/useChatConversationContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 
 
 export default function ChatScreen() {
@@ -32,15 +32,7 @@ export function ChatScreenContent() {
 
   const footer = voiceInputActivated ? <VoiceAnimation isActive={voiceInputActivated} /> : <TextInputBar />;
 
-  const touchedOutsideInput = () => {
-    Keyboard.dismiss();
-    if (voiceInputActivated) {
-      setVoiceInputActivated(false);
-    }
-  }
-
   return (
-    <TouchableWithoutFeedback onPress={() => touchedOutsideInput()} accessible={false}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
@@ -65,7 +57,6 @@ export function ChatScreenContent() {
           {footer}
         </View>
       </KeyboardAvoidingView>
-    </TouchableWithoutFeedback >
   );
 }
 

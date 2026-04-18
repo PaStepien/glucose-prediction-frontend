@@ -8,18 +8,25 @@ export function ChatList({ messages }: { messages: Message[] }) {
     const chatListRef = useRef<FlatList>(null);
     const { isAssistantThinking } = useChatConversationContext();
 
+    const scrollToBottom = () => {
+        chatListRef.current?.scrollToEnd({ animated: true });
+    };
+
     useEffect(() => {
         if (messages.length === 0) return;
-        chatListRef.current?.scrollToEnd({ animated: true });
-    }, [messages]);
+        scrollToBottom();
+    }, [messages, isAssistantThinking]);
 
     return (
         <FlatList
             data={messages}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <ChatBubble message={item} />}
+            style={styles.list}
             contentContainerStyle={styles.container}
-            ref={ref => ref?.scrollToEnd({ animated: true })}
+            ref={chatListRef}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             ListFooterComponent={
                 isAssistantThinking ? (
                     <View style={styles.thinkingRow}>
@@ -34,8 +41,10 @@ export function ChatList({ messages }: { messages: Message[] }) {
 }
 
 const styles = StyleSheet.create({
+    list: {
+        flex: 1,
+    },
     container: {
-        flexGrow: 1,
         paddingHorizontal: 16,
         paddingVertical: 8,
     },

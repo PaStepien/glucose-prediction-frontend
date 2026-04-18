@@ -1,6 +1,9 @@
-const ASSISTANT_URL = 'http://localhost:8000';
+const ASSISTANT_URL = "";
 
 export async function askAssistant(question: string): Promise<string> {
+    if (!ASSISTANT_URL) {
+        throw new Error("Assistant URL is not defined. Please set the ASSISTANT_URL environment variable.");
+    }
     const response = await fetch(`${ASSISTANT_URL}/ask`, {
         method: 'POST',
         headers: {
@@ -10,5 +13,5 @@ export async function askAssistant(question: string): Promise<string> {
     });
 
     const data = await response.json();
-    return data; 
+    return data.answer; 
 }
