@@ -1,4 +1,3 @@
-import { useChatConversationContext } from '@/hooks/chat/useChatConversationContext';
 import Feather from '@expo/vector-icons/Feather';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -14,10 +13,7 @@ const suggestions = [
     { iconItem: <MaterialIcons name="support-agent" size={24} color="#b8a8f0" />, label: "I'm feeling sad, can you cheer me up?" },
 ];
 
-const { setQuestionInput } = useChatConversationContext();
-
-
-export default function AssistantSuggestions() {
+export default function AssistantSuggestions({setQuestionInput} : {setQuestionInput: (input: string) => void}) {
 
 
     return (

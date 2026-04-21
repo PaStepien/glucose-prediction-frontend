@@ -35,9 +35,14 @@ export function ChatScreenContent() {
   const { startListening, stopListening } = useSpeechRecognition({
     onTranscriptReady: (text: string) => {
       setVoiceInputActivated(false);
-      console.log(text)
+      submitMessage(text, '');
     }
   });
+
+  const handleStartListening = () => {
+    setVoiceInputActivated(true);
+    startListening();
+  }
 
   const submitMessage = async (message: string, nextInput = '') => {
     const trimmedMessage = message.trim();
@@ -48,13 +53,13 @@ export function ChatScreenContent() {
     addMessage(trimmedMessage, 'user');
     setQuestionInput(nextInput);
     const audio = await askQuestion(trimmedMessage, addMessage, setIsAssistantThinking);
-    player.replace({ uri: audio });
+    player.replace(audio);
     player.play();
   };
 
   const footer = voiceInputActivated
     ? <VoiceAnimation isActive={voiceInputActivated} stopListening={stopListening} />
-    : <TextInputBar microphonePress={startListening} submitMessage={submitMessage} />;
+    : <TextInputBar microphonePress={handleStartListening} submitMessage={submitMessage} />;
 
   return (
     <KeyboardAvoidingView
@@ -71,7 +76,7 @@ export function ChatScreenContent() {
             keyboardShouldPersistTaps="handled"
           >
             <WelcomeMessage />
-            <AssistantSuggestions />
+            <AssistantSuggestions setQuestionInput={setQuestionInput} />
           </ScrollView> :
           <>
             <WelcomeMessage />
