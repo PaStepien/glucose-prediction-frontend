@@ -3,10 +3,13 @@ import { ChatList } from '@/components/chat/chats/ChatList';
 import TextInputBar from '@/components/chat/TextInputArea';
 import VoiceAnimation from '@/components/chat/VoiceAnimation';
 import WelcomeMessage from '@/components/chat/WelcomeMessage';
+import { askQuestion } from '@/hooks/chat/ask-question';
 import { ChatProvider, useChatConversationContext } from '@/hooks/chat/useChatConversationContext';
+import { useAudioPlayer } from 'expo-audio';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { useSpeechRecognition } from '../../hooks/chat/use-speech-regonition';
 
 
 export default function ChatScreen() {
@@ -27,36 +30,57 @@ export default function ChatScreen() {
 
 
 export function ChatScreenContent() {
+  const player = useAudioPlayer(null);
+  const { voiceInputActivated, setVoiceInputActivated, messages, addMessage, setIsAssistantThinking, setQuestionInput } = useChatConversationContext();
+  const { startListening, stopListening } = useSpeechRecognition({
+    onTranscriptReady: (text: string) => {
+      setVoiceInputActivated(false);
+      console.log(text)
+    }
+  });
 
-  const { voiceInputActivated, setVoiceInputActivated, messages } = useChatConversationContext();
+  const submitMessage = async (message: string, nextInput = '') => {
+    const trimmedMessage = message.trim();
+    if (trimmedMessage.length === 0) {
+      return;
+    }
 
-  const footer = voiceInputActivated ? <VoiceAnimation isActive={voiceInputActivated} /> : <TextInputBar />;
+    addMessage(trimmedMessage, 'user');
+    setQuestionInput(nextInput);
+    const audio = await askQuestion(trimmedMessage, addMessage, setIsAssistantThinking);
+    player.replace({ uri: audio });
+    player.play();
+  };
+
+  const footer = voiceInputActivated
+    ? <VoiceAnimation isActive={voiceInputActivated} stopListening={stopListening} />
+    : <TextInputBar microphonePress={startListening} submitMessage={submitMessage} />;
 
   return (
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.keyboardView}
+    >
+      <View
+        style={styles.container}
       >
-        <View
-          style={styles.container}
-        >
 
-          {messages.length === 0 ?
-            <ScrollView
-              contentContainerStyle={{ flexGrow: 1 }}
-              keyboardShouldPersistTaps="handled"
-            >
-              <WelcomeMessage />
-              <AssistantSuggestions />
-            </ScrollView> :
-            <>
-              <WelcomeMessage />
-              <ChatList messages={messages} />
-            </>
-          }
-          {footer}
-        </View>
-      </KeyboardAvoidingView>
+        {messages.length === 0 ?
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+          >
+            <WelcomeMessage />
+            <AssistantSuggestions />
+          </ScrollView> :
+          <>
+            <WelcomeMessage />
+            <ChatList messages={messages} />
+          </>
+        }
+        {footer}
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 

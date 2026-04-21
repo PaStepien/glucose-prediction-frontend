@@ -1,18 +1,10 @@
-import { useChatConversationContext } from "@/hooks/chat/useChatConversationContext";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, TouchableOpacity } from "react-native";
-const voiceAssistantSound = require("../../assets/sounds/ding.mp3");
+export default function Microphone({ onPress }: { onPress: () => void }) {
 
-export default function Microphone({ handleDetectedText }: { handleDetectedText: (detectedText: string) => void }) {
-    const { setVoiceInputActivated } = useChatConversationContext();
-
-    const handleMicPress = async () => {
-        const detectedText = "Hi, I'm PAM, your diabetes voice assistant";
-        setVoiceInputActivated(true);
-    };
     return (
-        <TouchableOpacity style={styles.micButton} onPress={handleMicPress}>
+        <TouchableOpacity style={styles.micButton} onPress={onPress}>
             <LinearGradient
                 colors={['#b8a8f0', '#e8a8d8']}
                 start={{ x: 0, y: 0 }}

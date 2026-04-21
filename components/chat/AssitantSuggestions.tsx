@@ -1,3 +1,4 @@
+import { useChatConversationContext } from '@/hooks/chat/useChatConversationContext';
 import Feather from '@expo/vector-icons/Feather';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -13,7 +14,12 @@ const suggestions = [
     { iconItem: <MaterialIcons name="support-agent" size={24} color="#b8a8f0" />, label: "I'm feeling sad, can you cheer me up?" },
 ];
 
+const { setQuestionInput } = useChatConversationContext();
+
+
 export default function AssistantSuggestions() {
+
+
     return (
         <View style={styles.chipsContainer}>
             <Text style={styles.chipHeader}>I'm  <Text style={styles.chipHeaderBold}>PAM</Text>, your virtual diabetes assistant</Text>
@@ -22,8 +28,9 @@ export default function AssistantSuggestions() {
                 <TouchableOpacity
                     key={index}
                     style={styles.chip}
+                    onPress={() => setQuestionInput(item.label)}
                 >
-                        
+
                     {item.iconItem}
                     <Text style={styles.chipText}>{item.label}</Text>
                 </TouchableOpacity>

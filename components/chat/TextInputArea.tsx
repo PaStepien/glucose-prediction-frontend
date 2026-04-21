@@ -1,5 +1,5 @@
-import { askQuestion } from '@/hooks/chat/ask-question';
 import { useChatConversationContext } from '@/hooks/chat/useChatConversationContext';
+import { useAudioPlayer } from 'expo-audio';
 import React from 'react';
 import {
     StyleSheet,
@@ -9,38 +9,26 @@ import {
 import Microphone from './Microphone';
 import SubmitInput from './SubmitInput';
 
-export default function TextInputArea() {
-    const [textInput, setText] = React.useState('');
-    const { addMessage, setIsAssistantThinking } = useChatConversationContext();
-   
-
-    const submitMessage = async (message: string, nextInput = '') => {
-        const trimmedMessage = message.trim();
-        if (trimmedMessage.length === 0) {
-            return;
-        }
-
-        addMessage(trimmedMessage, 'user');
-        setText(nextInput);
-        await askQuestion(trimmedMessage, addMessage, setIsAssistantThinking);
-    };
+export default function TextInputArea({ microphonePress, submitMessage }: { microphonePress: () => void; submitMessage: (message: string) => void }) {
+    const { questionInput, setQuestionInput } = useChatConversationContext();
+    const player = useAudioPlayer(null);
 
     return (
         <View style={styles.inputWrapper}>
             <View style={styles.inputBar}>
                 <TextInput
-                    value={textInput}
-                    onChangeText={setText}
+                    value={questionInput}
+                    onChangeText={setQuestionInput}
                     style={styles.textInput}
                     placeholder="Ask me anything..."
                     placeholderTextColor="#a99fc4"
                 />
-                {textInput.length === 0 ? (
+                {questionInput.length === 0 ? (
                     <Microphone
-                        handleDetectedText={(detectedText) => submitMessage(detectedText, detectedText.trim())}
+                        onPress={microphonePress}
                     />
                 ) : (
-                    <SubmitInput handleSubmit={() => submitMessage(textInput)} />
+                    <SubmitInput handleSubmit={() => submitMessage(questionInput)} />
                 )}
             </View>
         </View>

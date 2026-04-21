@@ -1,7 +1,8 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import WaveBar from "./animation/WaveBar";
 
-export default function VoiceAnimation({ isActive }: { isActive: boolean }) {
+export default function VoiceAnimation({ isActive, stopListening }: { isActive: boolean; stopListening: () => void }) {
+
     const waveBars = [
         { maxHeight: 18, duration: 500 },
         { maxHeight: 38, duration: 700 },
@@ -17,14 +18,14 @@ export default function VoiceAnimation({ isActive }: { isActive: boolean }) {
         { maxHeight: 36, duration: 600 },
     ];
     return (
-        <View style={styles.container}>
+        <Pressable style={styles.container} onPress={() => stopListening()}>
             <View style={styles.barsContainer}>
                 {waveBars.map((bar, index) => (
                     <WaveBar key={index} maxHeight={bar.maxHeight} duration={bar.duration} isActive={isActive} minHeight={15} />
                 ))}
             </View>
             <Text style={styles.listeningText}>Listening...</Text>
-        </View>
+        </Pressable>
 
     );
 }

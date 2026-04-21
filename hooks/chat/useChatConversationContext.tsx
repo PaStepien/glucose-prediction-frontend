@@ -8,6 +8,8 @@ type ChatContextType = {
   addMessage: (text: string, role: 'user' | 'assistant') => void;
   isAssistantThinking: boolean;
   setIsAssistantThinking: (value: boolean) => void;
+  questionInput: string;
+  setQuestionInput: (value: string) => void;
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -16,6 +18,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [voiceInputActivated, setVoiceInputActivated] = useState(false);
   const [isAssistantThinking, setIsAssistantThinking] = useState(false);
+  const [questionInput, setQuestionInput] = useState('');
 
   const addMessage = (text: string, role: 'user' | 'assistant') => {
     const newMessage: Message = {
@@ -29,7 +32,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
 
   return (
-    <ChatContext.Provider value={{ voiceInputActivated, setVoiceInputActivated, messages, addMessage, isAssistantThinking, setIsAssistantThinking }}>
+    <ChatContext.Provider value={{ voiceInputActivated, setVoiceInputActivated, messages, addMessage, isAssistantThinking, setIsAssistantThinking, questionInput, setQuestionInput }}>
       {children}
     </ChatContext.Provider>
   );

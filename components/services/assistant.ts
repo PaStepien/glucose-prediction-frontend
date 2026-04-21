@@ -1,6 +1,8 @@
-const ASSISTANT_URL = "";
+import { QuestionResponse } from "@/constants/chat/question-response";
 
-export async function askAssistant(question: string): Promise<string> {
+const ASSISTANT_URL = "localhost:8000";
+
+export async function askAssistant(question: string): Promise<QuestionResponse> {
     if (!ASSISTANT_URL) {
         throw new Error("Assistant URL is not defined. Please set the ASSISTANT_URL environment variable.");
     }
@@ -13,5 +15,5 @@ export async function askAssistant(question: string): Promise<string> {
     });
 
     const data = await response.json();
-    return data.answer; 
+    return data; 
 }
