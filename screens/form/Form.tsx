@@ -1,37 +1,8 @@
-/**
- * LogEntryForm.tsx
- * ─────────────────────────────────────────────────────────────
- * Health data entry form for glucose prediction.
- *
- * What the user fills in:
- *   1. Meals        → carbs (g) + meal type + timestamp
- *   2. Insulin      → bolus dose (U) + timestamp
- *   3. Activity     → steps or exercise session + timestamp
- *
- * What is auto-populated / mocked (real app: from CGM/HealthKit):
- *   • CGM glucose readings (last 2 h window shown as preview)
- *
- * Payload shape sent to FastAPI  /api/log-entry  (POST):
- * {
- *   meals: [{ carbs, meal_type, logged_at }],
- *   boluses: [{ dose_units, logged_at }],
- *   activity: [{ steps, logged_at }],
- *   cgm_preview: [{ glucose, timestamp }]   // last N readings
- * }
- *
- * The FastAPI backend is responsible for:
- *   • Aligning entries to 5-min time steps
- *   • Computing insulin_activity via PK model
- *   • Computing steps_weighted_avg
- *   • Building the feature matrix for the LSTM
- * ─────────────────────────────────────────────────────────────
- */
-
 import ActivityRow, { ActivityEntry } from "@/components/form/ActivityRow";
 import BolusRow, { BolusEntry } from "@/components/form/BolusRow";
 import FormHeader from "@/components/form/Header";
 import MealRow, { MealEntry } from "@/components/form/MealRow";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
 	Alert,
 	KeyboardAvoidingView,
@@ -44,23 +15,26 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// ─── Mock CGM data (replace with real import) ───
 
-const MOCK_CGM = [
-	{ glucose: 83, timestamp: new Date(Date.now() - 10 * 60000) },
-	{ glucose: 88, timestamp: new Date(Date.now() - 5 * 60000) },
-	{ glucose: 93, timestamp: new Date() },
-];
+const API_BASE = "http://127.0.0.1:8000";
 
-// ─── Helpers ──────────────────────────────────────────────────
+
+const USER_ID = "ca0658f3-e059-496c-9814-cf4754086eb2";
+
+
+
+interface CGMReading {
+	glucose: number;
+	timestamp: string;
+}
+
 
 const uid = () => Math.random().toString(36).slice(2, 9);
-
 
 export const formatTime = (d: Date) =>
 	d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-// ─── Sub-components ───────────────────────────────────────────
+
 
 function SectionHeader({ icon, title }: { icon: string; title: string }) {
 	return (
@@ -71,30 +45,39 @@ function SectionHeader({ icon, title }: { icon: string; title: string }) {
 	);
 }
 
-function CGMPreview() {
-	const latest = MOCK_CGM[MOCK_CGM.length - 1];
-	const prev = MOCK_CGM[MOCK_CGM.length - 2];
-	const delta = latest.glucose - prev.glucose;
+function CGMPreview({ readings }: { readings: CGMReading[] }) {
+	if (readings.length === 0) {
+		return (
+			<View style={styles.cgmCard}>
+				<Text style={styles.cgmLabel}>Loading CGM data...</Text>
+			</View>
+		);
+	}
+
+	const latest = readings[readings.length - 1];
+	const prev = readings[readings.length - 2];
+	const delta = Math.round(latest.glucose - prev.glucose);
 	const trend = delta > 0 ? "↑" : delta < 0 ? "↓" : "→";
-	const trendColor =
-		delta > 2 ? "#FF6B6B" : delta < -2 ? "#4ECDC4" : "#A8E6CF";
+	const trendColor = delta > 2 ? "#FF6B6B" : delta < -2 ? "#4ECDC4" : "#A8E6CF";
+
+
+	const chartReadings = readings.slice(-8);
 
 	return (
 		<View style={styles.cgmCard}>
 			<View style={styles.cgmLeft}>
 				<Text style={styles.cgmLabel}>CURRENT GLUCOSE</Text>
 				<View style={styles.cgmValueRow}>
-					<Text style={styles.cgmValue}>{latest.glucose}</Text>
+					<Text style={styles.cgmValue}>{Math.round(latest.glucose)}</Text>
 					<Text style={styles.cgmUnit}> mg/dL</Text>
 					<Text style={[styles.cgmTrend, { color: trendColor }]}>{trend}</Text>
 				</View>
 				<Text style={styles.cgmSub}>
-					{delta > 0 ? "+" : ""}
-					{delta} from 5 min ago · auto-imported
+					{delta > 0 ? "+" : ""}{delta} from 5 min ago · mocked
 				</Text>
 			</View>
 			<View style={styles.cgmMiniChart}>
-				{MOCK_CGM.map((pt, i) => {
+				{chartReadings.map((pt, i) => {
 					const h = ((pt.glucose - 70) / 100) * 40;
 					return (
 						<View
@@ -108,6 +91,8 @@ function CGMPreview() {
 	);
 }
 
+
+
 export default function UserForm() {
 	const [meals, setMeals] = useState<MealEntry[]>([]);
 	const [boluses, setBoluses] = useState<BolusEntry[]>([]);
@@ -115,7 +100,29 @@ export default function UserForm() {
 	const [submitting, setSubmitting] = useState(false);
 	const [entryDate, setEntryDate] = useState(new Date());
 
+
+	const [cgmReadings, setCgmReadings] = useState<CGMReading[]>([]);
+	const [cgmLoading, setCgmLoading] = useState(true);
+
 	const scrollRef = useRef<ScrollView>(null);
+
+
+	useEffect(() => {
+		const fetchMockCGM = async () => {
+			try {
+				const res = await fetch(`${API_BASE}/api/cgm/mock/${USER_ID}?n=36`);
+				const data = await res.json();
+				setCgmReadings(data.readings);
+			} catch (e) {
+				console.error("Failed to fetch CGM mock data:", e);
+				Alert.alert("CGM Error", "Could not load glucose readings.");
+			} finally {
+				setCgmLoading(false);
+			}
+		};
+
+		fetchMockCGM();
+	}, []);
 
 	// ── Add handlers ──────────────────────────────────────────
 
@@ -137,7 +144,7 @@ export default function UserForm() {
 			{ id: uid(), steps: "", logged_at: new Date() },
 		]);
 
-	// ── Validation ────────────────────────────────────────────
+
 
 	const validate = (): string | null => {
 		for (const m of meals) {
@@ -155,12 +162,10 @@ export default function UserForm() {
 		return null;
 	};
 
-	// ── Build payload ─────────────────────────────────────────
-	// Transforms raw form state into the shape FastAPI expects.
-	// Backend will align these to 5-min time steps and compute
-	// derived features (insulin_activity, steps_weighted_avg, etc.)
 
 	const buildPayload = () => ({
+		user_id: USER_ID,
+		entry_date: entryDate.toISOString(),
 		meals: meals.map((m) => ({
 			carbs: Number(m.carbs),
 			meal_type: m.meal_type,
@@ -174,13 +179,10 @@ export default function UserForm() {
 			steps: Number(a.steps),
 			logged_at: a.logged_at.toISOString(),
 		})),
-		cgm_preview: MOCK_CGM.map((c) => ({
-			glucose: c.glucose,
-			timestamp: c.timestamp.toISOString(),
-		})),
+		cgm_preview: cgmReadings,   // the 36 readings fetched on load
 	});
 
-	// ── Submit ────────────────────────────────────────────────
+
 
 	const handleSubmit = async () => {
 		const err = validate();
@@ -189,30 +191,49 @@ export default function UserForm() {
 			return;
 		}
 
+		if (cgmReadings.length === 0) {
+			Alert.alert("CGM not ready", "Still loading glucose data, try again.");
+			return;
+		}
+
 		setSubmitting(true);
-		const payload = buildPayload();
 
 		try {
-			// TODO: replace with your FastAPI base URL
-			// const res = await fetch("http://YOUR_API/api/log-entry", {
-			//   method: "POST",
-			//   headers: { "Content-Type": "application/json" },
-			//   body: JSON.stringify(payload),
-			// });
-			// const data = await res.json();
+			const payload = buildPayload();
 
-			// Mock success for now
-			console.log("Payload →", JSON.stringify(payload, null, 2));
-			await new Promise((r) => setTimeout(r, 800));
-			Alert.alert("✅ Logged!", "Your data was saved. Prediction incoming.");
-		} catch (e) {
-			Alert.alert("Error", "Could not connect to server.");
+			const res = await fetch(`${API_BASE}/api/log-entry`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			});
+
+			if (!res.ok) {
+				const err = await res.json();
+				throw new Error(err.detail || "Server error");
+			}
+
+			const data = await res.json();
+			console.log("✅ Saved log entry:", data);
+
+			Alert.alert(
+				"✅ Saved!",
+				"Your data has been logged.",
+			);
+
+			// Reset form after successful save
+			setMeals([]);
+			setBoluses([]);
+			setActivity([]);
+
+		} catch (e: any) {
+			console.error("Save failed:", e);
+			Alert.alert("Error", e.message || "Could not connect to server.");
 		} finally {
 			setSubmitting(false);
 		}
 	};
 
-	// ─────────────────────────────────────────────────────────
+
 
 	return (
 		<SafeAreaView style={styles.safe}>
@@ -228,9 +249,9 @@ export default function UserForm() {
 					{/* Header */}
 					<FormHeader date={entryDate} onChange={setEntryDate} />
 
-					{/* CGM Preview */}
+					{/* CGM Preview — shows live mock data fetched on load */}
 					<SectionHeader icon="📡" title="Glucose (CGM)" />
-					<CGMPreview />
+					<CGMPreview readings={cgmReadings} />
 
 					{/* ── Meals ─────────────────────────────── */}
 					<SectionHeader icon="🍽️" title="Meals" />
@@ -303,18 +324,18 @@ export default function UserForm() {
 
 					{/* ── Submit ────────────────────────────── */}
 					<TouchableOpacity
-						style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
+						style={[styles.submitBtn, (submitting || cgmLoading) && styles.submitBtnDisabled]}
 						onPress={handleSubmit}
-						disabled={submitting}
+						disabled={submitting || cgmLoading}
 					>
 						<Text style={styles.submitBtnText}>
-							{submitting ? "Saving…" : "Save"}
+							{submitting ? "Saving…" : cgmLoading ? "Loading CGM…" : "Save"}
 						</Text>
 					</TouchableOpacity>
 
-					{/* Data note */}
 					<Text style={styles.footerNote}>
-						CGM data is auto-imported from your sensor.{"\n"}
+						CGM data is mocked — real sensor coming soon.{"\n"}
+						Feature engineering runs at prediction time.
 					</Text>
 				</ScrollView>
 			</KeyboardAvoidingView>
@@ -336,7 +357,6 @@ const theme = {
 	danger: "#E05C8A",
 };
 
-
 export const styles = StyleSheet.create({
 	safe: {
 		flex: 1,
@@ -346,8 +366,6 @@ export const styles = StyleSheet.create({
 		paddingHorizontal: 20,
 		paddingBottom: 60,
 	},
-
-	// Header
 	headerTitle: {
 		fontFamily: Platform.OS === "ios" ? "Georgia" : "serif",
 		fontSize: 32,
@@ -362,8 +380,6 @@ export const styles = StyleSheet.create({
 		letterSpacing: 0.5,
 		textTransform: "uppercase",
 	},
-
-	// Section header
 	sectionHeader: {
 		flexDirection: "row",
 		alignItems: "center",
@@ -379,8 +395,6 @@ export const styles = StyleSheet.create({
 		letterSpacing: 1.5,
 		textTransform: "uppercase",
 	},
-
-	// CGM card
 	cgmCard: {
 		backgroundColor: theme.surface,
 		borderRadius: 16,
@@ -436,8 +450,6 @@ export const styles = StyleSheet.create({
 		borderRadius: 3,
 		opacity: 0.7,
 	},
-
-	// Entry rows
 	entryRow: {
 		backgroundColor: theme.surface,
 		borderRadius: 14,
@@ -457,8 +469,6 @@ export const styles = StyleSheet.create({
 		marginTop: 10,
 		fontStyle: "italic",
 	},
-
-	// Pill selector
 	pillScroll: {
 		marginBottom: 12,
 	},
@@ -483,8 +493,6 @@ export const styles = StyleSheet.create({
 		color: theme.accent,
 		fontWeight: "700",
 	},
-
-	// Input fields
 	inputGroup: {
 		flex: 1,
 	},
@@ -507,13 +515,11 @@ export const styles = StyleSheet.create({
 		fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
 		fontWeight: "700",
 	},
-
-	// Remove button
 	removeBtn: {
 		width: 32,
 		height: 32,
 		borderRadius: 16,
-		backgroundColor: "#FF6B6B18",
+		backgroundColor: "#E05C8A18",
 		alignItems: "center",
 		justifyContent: "center",
 		marginTop: 16,
@@ -523,8 +529,6 @@ export const styles = StyleSheet.create({
 		fontSize: 13,
 		fontWeight: "700",
 	},
-
-	// Add button
 	addBtn: {
 		borderWidth: 1,
 		borderColor: theme.accent,
@@ -540,8 +544,6 @@ export const styles = StyleSheet.create({
 		fontWeight: "600",
 		letterSpacing: 0.5,
 	},
-
-	// Empty state
 	emptyHint: {
 		color: theme.textSub,
 		fontSize: 13,
@@ -549,8 +551,6 @@ export const styles = StyleSheet.create({
 		marginBottom: 8,
 		paddingLeft: 4,
 	},
-
-	// Submit
 	submitBtn: {
 		backgroundColor: theme.accent,
 		borderRadius: 16,
@@ -562,13 +562,11 @@ export const styles = StyleSheet.create({
 		opacity: 0.5,
 	},
 	submitBtnText: {
-		color: "#0D0F14",
+		color: "#FFFFFF",
 		fontSize: 17,
 		fontWeight: "800",
 		letterSpacing: 0.5,
 	},
-
-	// Footer
 	footerNote: {
 		fontSize: 11,
 		color: theme.textSub,
@@ -577,9 +575,7 @@ export const styles = StyleSheet.create({
 		lineHeight: 18,
 		fontStyle: "italic",
 	},
-
 	timeDisplay: {
-		// replace your existing plain <Text> style with this touchable version
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-between",
