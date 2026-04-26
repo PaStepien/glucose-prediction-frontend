@@ -3,8 +3,8 @@ import { StyleSheet, Text, View } from 'react-native'
 import { LineChart } from 'react-native-gifted-charts'
 import { T } from '../../constants/dashboard/theme'
 
-const actualData  = chartData.map(d => ({ value: d.actual  ?? undefined }))
-const predictData = chartData.map(d => ({
+const actualData  = chartData.map((d: { actual: any }) => ({ value: d.actual  ?? undefined }))
+const predictData = chartData.map((d: { predicted: any }) => ({
   value: d.predicted ?? undefined,
   dashWidth: 6,
   dashGap: 4,
