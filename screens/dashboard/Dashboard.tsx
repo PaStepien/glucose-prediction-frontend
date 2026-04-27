@@ -44,7 +44,7 @@ const todayDate = new Date();
 
 const styles = StyleSheet.create({
   flex:      { flex:1 },
-  scroll:    { padding:20, gap:30, paddingBottom:32 },
+  scroll:    { padding:20, gap:10, paddingBottom:32 },
   header:    { flexDirection:'row', justifyContent:'space-between',
                alignItems:'center' },
   greet:     { fontSize: T.font.sm, color: T.muted },
@@ -53,8 +53,7 @@ const styles = StyleSheet.create({
                backgroundColor:'rgba(192,132,252,0.15)',
                borderWidth:1, borderColor: T.border,
                alignItems:'center', justifyContent:'center' },
-  card:      { backgroundColor: T.surface, borderRadius: T.radius.lg,
-               borderWidth:1, borderColor: T.border, padding:14 },
+  card:      { backgroundColor: T.surface, padding:14 },
   cardTitle: { fontSize: T.font.sm, fontWeight:'600',
                color: T.text, marginBottom:6 },
   section:   { fontSize: T.font.sm, fontWeight:'600', color: T.text },

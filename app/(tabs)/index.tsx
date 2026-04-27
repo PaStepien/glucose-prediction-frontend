@@ -3,7 +3,7 @@ import Auth from '@/components/auth/Auth';
 import { Dashboard } from '@/screens/dashboard/Dashboard';
 import { JwtPayload } from '@supabase/supabase-js';
 import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import 'react-native-url-polyfill/auto';
 
 const DashboardScreen = () => {
@@ -22,10 +22,8 @@ const DashboardScreen = () => {
   }, []);
 
   return (
-    <View>
-      <Auth />
-      {claims && <Text>{claims.sub}</Text>}
-      <Dashboard />
+     <View style={{ flex: 1 }}>
+   {claims ? <Dashboard/> : <Auth/>}
     </View>
   );
 };
