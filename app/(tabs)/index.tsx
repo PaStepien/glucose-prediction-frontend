@@ -22,8 +22,8 @@ const DashboardScreen = () => {
   }, []);
 
   return (
-     <View style={{ flex: 1 }}>
-   {claims ? <Dashboard/> : <Auth/>}
+    <View style={{ flex: 1 }}>
+      {claims ? <Dashboard claims={claims} /> : <Auth />}
     </View>
   );
 };

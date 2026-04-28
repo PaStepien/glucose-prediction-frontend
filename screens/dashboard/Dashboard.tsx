@@ -1,13 +1,16 @@
 import AlertBanner from '@/components/AlertBanner';
 import GlucoseChart from '@/components/dashboard/GlucoseChart';
+import { JwtPayload } from '@supabase/supabase-js';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import StatCards from '../../components/dashboard/StatCards';
 import { T } from '../../constants/dashboard/theme';
 
-export const Dashboard = () => {
-const todayDate = new Date();
+type DashboardProps = { claims: JwtPayload }
+
+export const Dashboard = ({ claims }: DashboardProps) => {
+  const todayDate = new Date();
   return (
     <LinearGradient colors={T.gradBg} style={styles.flex}>
       <SafeAreaView style={styles.flex}>
@@ -27,14 +30,14 @@ const todayDate = new Date();
           </View>
 
   
-          <StatCards current={120} predicted={130} trend={5} />
+          <StatCards claims={claims} />
 
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Glucose levels: {todayDate.toLocaleDateString()} </Text>
-            <GlucoseChart />
+            <GlucoseChart claims={claims} />
           </View>
 
-          <AlertBanner />
+<AlertBanner claims={claims} />
 
         </ScrollView>
       </SafeAreaView>
