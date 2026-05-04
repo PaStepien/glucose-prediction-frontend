@@ -1,6 +1,6 @@
 import { QuestionResponse } from "@/constants/chat/question-response";
 
-const ASSISTANT_URL = "";
+const ASSISTANT_URL = "http://localhost:8000";
 
 export async function askAssistant(question: string): Promise<QuestionResponse> {
     if (!ASSISTANT_URL) {
