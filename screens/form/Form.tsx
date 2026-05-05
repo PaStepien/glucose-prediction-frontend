@@ -1,25 +1,16 @@
+
+import { supabase } from "@/auth/lib/supabase";
 import ActivityRow, { ActivityEntry } from "@/components/form/ActivityRow";
 import BolusRow, { BolusEntry } from "@/components/form/BolusRow";
 import FormHeader from "@/components/form/Header";
 import MealRow, { MealEntry } from "@/components/form/MealRow";
 import React, { useEffect, useRef, useState } from "react";
-import {
-	Alert,
-	KeyboardAvoidingView,
-	Platform,
-	ScrollView,
-	StyleSheet,
-	Text,
-	TouchableOpacity,
-	View
-} from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 
 const API_BASE = "http://127.0.0.1:8000";
 
-
-const USER_ID = "ca0658f3-e059-496c-9814-cf4754086eb2";
 
 
 
@@ -45,84 +36,66 @@ function SectionHeader({ icon, title }: { icon: string; title: string }) {
 	);
 }
 
-function CGMPreview({ readings }: { readings: CGMReading[] }) {
-	if (readings.length === 0) {
-		return (
-			<View style={styles.cgmCard}>
-				<Text style={styles.cgmLabel}>Loading CGM data...</Text>
-			</View>
-		);
-	}
-
-	const latest = readings[readings.length - 1];
-	const prev = readings[readings.length - 2];
-	const delta = Math.round(latest.glucose - prev.glucose);
-	const trend = delta > 0 ? "↑" : delta < 0 ? "↓" : "→";
-	const trendColor = delta > 2 ? "#FF6B6B" : delta < -2 ? "#4ECDC4" : "#A8E6CF";
-
-
-	const chartReadings = readings.slice(-8);
-
-	return (
-		<View style={styles.cgmCard}>
-			<View style={styles.cgmLeft}>
-				<Text style={styles.cgmLabel}>CURRENT GLUCOSE</Text>
-				<View style={styles.cgmValueRow}>
-					<Text style={styles.cgmValue}>{Math.round(latest.glucose)}</Text>
-					<Text style={styles.cgmUnit}> mg/dL</Text>
-					<Text style={[styles.cgmTrend, { color: trendColor }]}>{trend}</Text>
-				</View>
-				<Text style={styles.cgmSub}>
-					{delta > 0 ? "+" : ""}{delta} from 5 min ago · mocked
-				</Text>
-			</View>
-			<View style={styles.cgmMiniChart}>
-				{chartReadings.map((pt, i) => {
-					const h = ((pt.glucose - 70) / 100) * 40;
-					return (
-						<View
-							key={i}
-							style={[styles.cgmBar, { height: Math.max(4, h) }]}
-						/>
-					);
-				})}
-			</View>
-		</View>
-	);
-}
-
 
 
 export default function UserForm() {
-	const [meals, setMeals] = useState<MealEntry[]>([]);
-	const [boluses, setBoluses] = useState<BolusEntry[]>([]);
-	const [activity, setActivity] = useState<ActivityEntry[]>([]);
-	const [submitting, setSubmitting] = useState(false);
-	const [entryDate, setEntryDate] = useState(new Date());
+       const [meals, setMeals] = useState<MealEntry[]>([]);
+       const [boluses, setBoluses] = useState<BolusEntry[]>([]);
+       const [activity, setActivity] = useState<ActivityEntry[]>([]);
+       const [submitting, setSubmitting] = useState(false);
+       const [entryDate, setEntryDate] = useState(new Date());
 
+       const [cgmReadings, setCgmReadings] = useState<CGMReading[]>([]);
+       const [cgmLoading, setCgmLoading] = useState(true);
+       const [userId, setUserId] = useState<string | null>(null);
+       const [claimsLoading, setClaimsLoading] = useState(true);
 
-	const [cgmReadings, setCgmReadings] = useState<CGMReading[]>([]);
-	const [cgmLoading, setCgmLoading] = useState(true);
+       const scrollRef = useRef<ScrollView>(null);
 
-	const scrollRef = useRef<ScrollView>(null);
+       // Fetch user claims on mount
+       useEffect(() => {
+	       let isMounted = true;
+	       const fetchClaims = async () => {
+		       setClaimsLoading(true);
+		       try {
+			       const { data } = await supabase.auth.getClaims();
+			       if (isMounted) {
+				       setUserId(data?.claims?.sub ?? null);
+			       }
+			       } catch {
+				       if (isMounted) setUserId(null);
+		       } finally {
+			       if (isMounted) setClaimsLoading(false);
+		       }
+	       };
+	       fetchClaims();
+	       // Listen for auth state changes
+	       const { data: listener } = supabase.auth.onAuthStateChange(() => {
+		       fetchClaims();
+	       });
+	       return () => {
+		       isMounted = false;
+		       listener?.subscription.unsubscribe();
+	       };
+       }, []);
 
-
-	useEffect(() => {
-		const fetchMockCGM = async () => {
-			try {
-				const res = await fetch(`${API_BASE}/api/cgm/mock/${USER_ID}?n=36`);
-				const data = await res.json();
-				setCgmReadings(data.readings);
-			} catch (e) {
-				console.error("Failed to fetch CGM mock data:", e);
-				Alert.alert("CGM Error", "Could not load glucose readings.");
-			} finally {
-				setCgmLoading(false);
-			}
-		};
-
-		fetchMockCGM();
-	}, []);
+       // Fetch CGM data when userId is available
+       useEffect(() => {
+	       if (!userId) return;
+	       const fetchMockCGM = async () => {
+		       try {
+			       const res = await fetch(`${API_BASE}/api/cgm/mock/${userId}?n=36`);
+			       const data = await res.json();
+			       setCgmReadings(data.readings);
+		       } catch (e) {
+			       console.error("Failed to fetch CGM mock data:", e);
+			       Alert.alert("CGM Error", "Could not load glucose readings.");
+		       } finally {
+			       setCgmLoading(false);
+		       }
+	       };
+	       fetchMockCGM();
+       }, [userId]);
 
 	// ── Add handlers ──────────────────────────────────────────
 
@@ -163,184 +136,197 @@ export default function UserForm() {
 	};
 
 
-	const buildPayload = () => ({
-		user_id: USER_ID,
-		entry_date: entryDate.toISOString(),
-		meals: meals.map((m) => ({
-			carbs: Number(m.carbs),
-			meal_type: m.meal_type,
-			logged_at: m.logged_at.toISOString(),
-		})),
-		boluses: boluses.map((b) => ({
-			dose_units: Number(b.dose_units),
-			logged_at: b.logged_at.toISOString(),
-		})),
-		activity: activity.map((a) => ({
-			steps: Number(a.steps),
-			logged_at: a.logged_at.toISOString(),
-		})),
-		cgm_preview: cgmReadings,   // the 36 readings fetched on load
-	});
+	       const buildPayload = () => ({
+		       user_id: userId,
+		       entry_date: entryDate.toISOString(),
+		       meals: meals.map((m) => ({
+			       carbs: Number(m.carbs),
+			       meal_type: m.meal_type,
+			       logged_at: m.logged_at.toISOString(),
+		       })),
+		       boluses: boluses.map((b) => ({
+			       dose_units: Number(b.dose_units),
+			       logged_at: b.logged_at.toISOString(),
+		       })),
+		       activity: activity.map((a) => ({
+			       steps: Number(a.steps),
+			       logged_at: a.logged_at.toISOString(),
+		       })),
+		       cgm_preview: cgmReadings,   // the 36 readings fetched on load
+	       });
 
 
 
-	const handleSubmit = async () => {
-		const err = validate();
-		if (err) {
-			Alert.alert("Check your entries", err);
-			return;
-		}
 
-		if (cgmReadings.length === 0) {
-			Alert.alert("CGM not ready", "Still loading glucose data, try again.");
-			return;
-		}
+	       const handleSubmit = async () => {
+		       const err = validate();
+		       if (err) {
+			       Alert.alert("Check your entries", err);
+			       return;
+		       }
 
-		setSubmitting(true);
+		       if (!userId) {
+			       Alert.alert("Not logged in", "User ID not found. Please log in again.");
+			       return;
+		       }
 
-		try {
-			const payload = buildPayload();
+		       if (cgmReadings.length === 0) {
+			       Alert.alert("CGM not ready", "Still loading glucose data, try again.");
+			       return;
+		       }
 
-			const res = await fetch(`${API_BASE}/api/log-entry`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(payload),
-			});
+		       setSubmitting(true);
 
-			if (!res.ok) {
-				const err = await res.json();
-				throw new Error(err.detail || "Server error");
-			}
+		       try {
+			       const payload = buildPayload();
 
-			const data = await res.json();
-			console.log("✅ Saved log entry:", data);
+			       const res = await fetch(`${API_BASE}/api/log-entry`, {
+				       method: "POST",
+				       headers: { "Content-Type": "application/json" },
+				       body: JSON.stringify(payload),
+			       });
 
-			Alert.alert(
-				"✅ Saved!",
-				"Your data has been logged.",
-			);
+			       if (!res.ok) {
+				       const err = await res.json();
+				       throw new Error(err.detail || "Server error");
+			       }
 
-			// Reset form after successful save
-			setMeals([]);
-			setBoluses([]);
-			setActivity([]);
+			       const data = await res.json();
+			       console.log("✅ Saved log entry:", data);
 
-		} catch (e: any) {
-			console.error("Save failed:", e);
-			Alert.alert("Error", e.message || "Could not connect to server.");
-		} finally {
-			setSubmitting(false);
-		}
-	};
+			       Alert.alert(
+				       "✅ Saved!",
+				       "Your data has been logged.",
+			       );
+
+			       // Reset form after successful save
+			       setMeals([]);
+			       setBoluses([]);
+			       setActivity([]);
+
+		       } catch (e: any) {
+			       console.error("Save failed:", e);
+			       Alert.alert("Error", e.message || "Could not connect to server.");
+		       } finally {
+			       setSubmitting(false);
+		       }
+	       };
 
 
 
-	return (
-		<SafeAreaView style={styles.safe}>
-			<KeyboardAvoidingView
-				behavior={Platform.OS === "ios" ? "padding" : "height"}
-				style={{ flex: 1 }}
-			>
-				<ScrollView
-					ref={scrollRef}
-					contentContainerStyle={styles.scroll}
-					keyboardShouldPersistTaps="handled"
-				>
-					{/* Header */}
-					<FormHeader date={entryDate} onChange={setEntryDate} />
+	       // Show loading state if claims are being loaded
+	       if (claimsLoading) {
+		       return (
+			       <SafeAreaView style={styles.safe}>
+				       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+					       <Text style={styles.emptyHint}>Loading user info…</Text>
+				       </View>
+			       </SafeAreaView>
+		       );
+	       }
 
-					{/* CGM Preview — shows live mock data fetched on load */}
-					<SectionHeader icon="📡" title="Glucose (CGM)" />
-					<CGMPreview readings={cgmReadings} />
+	       return (
+		       <SafeAreaView style={styles.safe}>
+			       <KeyboardAvoidingView
+				       behavior={Platform.OS === "ios" ? "padding" : "height"}
+				       style={{ flex: 1 }}
+			       >
+				       <ScrollView
+					       ref={scrollRef}
+					       contentContainerStyle={styles.scroll}
+					       keyboardShouldPersistTaps="handled"
+				       >
+					       {/* Header */}
+					       <FormHeader date={entryDate} onChange={setEntryDate} />
 
-					{/* ── Meals ─────────────────────────────── */}
-					<SectionHeader icon="🍽️" title="Meals" />
-					{meals.length === 0 && (
-						<Text style={styles.emptyHint}>No meals logged yet.</Text>
-					)}
-					{meals.map((m) => (
-						<MealRow
-							key={m.id}
-							entry={m}
-							onChange={(updated) =>
-								setMeals((prev) =>
-									prev.map((x) => (x.id === updated.id ? updated : x))
-								)
-							}
-							onRemove={() =>
-								setMeals((prev) => prev.filter((x) => x.id !== m.id))
-							}
-						/>
-					))}
-					<TouchableOpacity style={styles.addBtn} onPress={addMeal}>
-						<Text style={styles.addBtnText}>+ Add Meal</Text>
-					</TouchableOpacity>
+					       {/* ── Meals ─────────────────────────────── */}
+					       <SectionHeader icon="🍽️" title="Meals" />
+					       {meals.length === 0 && (
+						       <Text style={styles.emptyHint}>No meals logged yet.</Text>
+					       )}
+					       {meals.map((m) => (
+						       <MealRow
+							       key={m.id}
+							       entry={m}
+							       onChange={(updated) =>
+								       setMeals((prev) =>
+									       prev.map((x) => (x.id === updated.id ? updated : x))
+								       )
+							       }
+							       onRemove={() =>
+								       setMeals((prev) => prev.filter((x) => x.id !== m.id))
+							       }
+						       />
+					       ))}
+					       <TouchableOpacity style={styles.addBtn} onPress={addMeal}>
+						       <Text style={styles.addBtnText}>+ Add Meal</Text>
+					       </TouchableOpacity>
 
-					{/* ── Insulin ───────────────────────────── */}
-					<SectionHeader icon="💉" title="Insulin Bolus" />
-					{boluses.length === 0 && (
-						<Text style={styles.emptyHint}>No boluses logged yet.</Text>
-					)}
-					{boluses.map((b) => (
-						<BolusRow
-							key={b.id}
-							entry={b}
-							onChange={(updated) =>
-								setBoluses((prev) =>
-									prev.map((x) => (x.id === updated.id ? updated : x))
-								)
-							}
-							onRemove={() =>
-								setBoluses((prev) => prev.filter((x) => x.id !== b.id))
-							}
-						/>
-					))}
-					<TouchableOpacity style={styles.addBtn} onPress={addBolus}>
-						<Text style={styles.addBtnText}>+ Add Bolus</Text>
-					</TouchableOpacity>
+					       {/* ── Insulin ───────────────────────────── */}
+					       <SectionHeader icon="💉" title="Insulin Bolus" />
+					       {boluses.length === 0 && (
+						       <Text style={styles.emptyHint}>No boluses logged yet.</Text>
+					       )}
+					       {boluses.map((b) => (
+						       <BolusRow
+							       key={b.id}
+							       entry={b}
+							       onChange={(updated) =>
+								       setBoluses((prev) =>
+									       prev.map((x) => (x.id === updated.id ? updated : x))
+								       )
+							       }
+							       onRemove={() =>
+								       setBoluses((prev) => prev.filter((x) => x.id !== b.id))
+							       }
+						       />
+					       ))}
+					       <TouchableOpacity style={styles.addBtn} onPress={addBolus}>
+						       <Text style={styles.addBtnText}>+ Add Bolus</Text>
+					       </TouchableOpacity>
 
-					{/* ── Activity ──────────────────────────── */}
-					<SectionHeader icon="🏃" title="Physical Activity" />
-					{activity.length === 0 && (
-						<Text style={styles.emptyHint}>No activity logged yet.</Text>
-					)}
-					{activity.map((a) => (
-						<ActivityRow
-							key={a.id}
-							entry={a}
-							onChange={(updated) =>
-								setActivity((prev) =>
-									prev.map((x) => (x.id === updated.id ? updated : x))
-								)
-							}
-							onRemove={() =>
-								setActivity((prev) => prev.filter((x) => x.id !== a.id))
-							}
-						/>
-					))}
-					<TouchableOpacity style={styles.addBtn} onPress={addActivity}>
-						<Text style={styles.addBtnText}>+ Add Activity</Text>
-					</TouchableOpacity>
+					       {/* ── Activity ──────────────────────────── */}
+					       <SectionHeader icon="🏃" title="Physical Activity" />
+					       {activity.length === 0 && (
+						       <Text style={styles.emptyHint}>No activity logged yet.</Text>
+					       )}
+					       {activity.map((a) => (
+						       <ActivityRow
+							       key={a.id}
+							       entry={a}
+							       onChange={(updated) =>
+								       setActivity((prev) =>
+									       prev.map((x) => (x.id === updated.id ? updated : x))
+								       )
+							       }
+							       onRemove={() =>
+								       setActivity((prev) => prev.filter((x) => x.id !== a.id))
+							       }
+						       />
+					       ))}
+					       <TouchableOpacity style={styles.addBtn} onPress={addActivity}>
+						       <Text style={styles.addBtnText}>+ Add Activity</Text>
+					       </TouchableOpacity>
 
-					{/* ── Submit ────────────────────────────── */}
-					<TouchableOpacity
-						style={[styles.submitBtn, (submitting || cgmLoading) && styles.submitBtnDisabled]}
-						onPress={handleSubmit}
-						disabled={submitting || cgmLoading}
-					>
-						<Text style={styles.submitBtnText}>
-							{submitting ? "Saving…" : cgmLoading ? "Loading CGM…" : "Save"}
-						</Text>
-					</TouchableOpacity>
+					       {/* ── Submit ────────────────────────────── */}
+					       <TouchableOpacity
+						       style={[styles.submitBtn, (submitting || cgmLoading) && styles.submitBtnDisabled]}
+						       onPress={handleSubmit}
+						       disabled={submitting || cgmLoading}
+					       >
+						       <Text style={styles.submitBtnText}>
+							       {submitting ? "Saving…" : cgmLoading ? "Loading CGM…" : "Save"}
+						       </Text>
+					       </TouchableOpacity>
 
-					<Text style={styles.footerNote}>
-						CGM data is mocked — real sensor coming soon.{"\n"}
-						Feature engineering runs at prediction time.
-					</Text>
-				</ScrollView>
-			</KeyboardAvoidingView>
-		</SafeAreaView>
-	);
+					       <Text style={styles.footerNote}>
+						       CGM data is mocked — real sensor coming soon.{"\n"}
+						       Feature engineering runs at prediction time.
+					       </Text>
+				       </ScrollView>
+			       </KeyboardAvoidingView>
+		       </SafeAreaView>
+	       );
 }
 
 // ─── Styles ───────────────────────────────────────────────────

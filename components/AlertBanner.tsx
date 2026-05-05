@@ -1,17 +1,18 @@
+import { LogHistoryEntry } from '@/constants/dashboard/glucoseTypes';
 import { T } from '@/constants/dashboard/theme';
-import { useLogHistory } from '@/hooks/dashboard/useLogHistory';
-import { JwtPayload } from '@supabase/supabase-js';
 import { ActivityIndicator, Text, View } from 'react-native';
 
-type Props = { claims: JwtPayload }
+type Props = {   
+  logHistory: LogHistoryEntry[]
+  loading: boolean
+  error: string | null }
 
 const RISING_THRESHOLD = 15
 const HIGH_THRESHOLD   = 180
 const LOW_THRESHOLD    = 70
 
-const AlertBanner = ({ claims }: Props) => {
-  const { logHistory, loading } = useLogHistory(claims, 10);
-  const latest = logHistory.at(-1) ?? null;
+const AlertBanner = ({ logHistory, loading, error }: Props) => {
+  const latest = logHistory.at(0) ?? null;
 
   if (loading) return <ActivityIndicator color={T.purple} style={{ marginTop: 4 }} />
   if (!latest) return null

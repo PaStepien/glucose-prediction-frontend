@@ -1,14 +1,14 @@
-import { WindowPoint } from '@/constants/dashboard/glucoseTypes';
+import { LogHistoryEntry, WindowPoint } from '@/constants/dashboard/glucoseTypes';
 import { T } from '@/constants/dashboard/theme';
-import { useLogHistory } from '@/hooks/dashboard/useLogHistory';
-import { JwtPayload } from '@supabase/supabase-js';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 
-type Props = { claims: JwtPayload }
+type Props = {  
+  logHistory: LogHistoryEntry[]
+  loading: boolean
+  error: string | null }
 
-const GlucoseChart = ({ claims }: Props) => {
-  const { logHistory, loading, error } = useLogHistory(claims, 10);
+const GlucoseChart = ({ logHistory, loading, error }: Props) => {
 
   if (loading) return <View style={styles.centre}><ActivityIndicator color={T.purple} /></View>
   if (error || !logHistory.length) return (
@@ -17,7 +17,7 @@ const GlucoseChart = ({ claims }: Props) => {
     </View>
   )
 
-  const latest = logHistory.at(-1)!
+  const latest = logHistory.at(0)!
   const win: WindowPoint[] = latest.lstm_window ?? [];
   const winLen = win.length;
 
