@@ -3,7 +3,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 const suggestions = [
     { iconItem: <Ionicons name="alarm-outline" size={24} color="#b8a8f0" />, label: "What will my blood sugar be in 2 hours?" },
@@ -20,7 +20,7 @@ export default function AssistantSuggestions({setQuestionInput} : {setQuestionIn
         <View style={styles.chipsContainer}>
             <Text style={styles.chipHeader}>I'm  <Text style={styles.chipHeaderBold}>PAM</Text>, your virtual diabetes assistant</Text>
             <Text style={styles.chipHeader}>Here are some things you can ask me:</Text>
-            {suggestions.map((item, index) => (
+            {/* {suggestions.map((item, index) => (
                 <TouchableOpacity
                     key={index}
                     style={styles.chip}
@@ -30,7 +30,7 @@ export default function AssistantSuggestions({setQuestionInput} : {setQuestionIn
                     {item.iconItem}
                     <Text style={styles.chipText}>{item.label}</Text>
                 </TouchableOpacity>
-            ))}
+            ))} */}
         </View>
     );
 }

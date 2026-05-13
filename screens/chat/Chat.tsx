@@ -1,3 +1,4 @@
+import { supabase } from '@/auth/lib/supabase';
 import AssistantSuggestions from '@/components/chat/AssitantSuggestions';
 import { ChatList } from '@/components/chat/chats/ChatList';
 import TextInputBar from '@/components/chat/TextInputArea';
@@ -5,14 +6,17 @@ import VoiceAnimation from '@/components/chat/VoiceAnimation';
 import WelcomeMessage from '@/components/chat/WelcomeMessage';
 import { askQuestion } from '@/hooks/chat/ask-question';
 import { ChatProvider, useChatConversationContext } from '@/hooks/chat/useChatConversationContext';
+import { JwtPayload } from '@supabase/supabase-js';
 import { useAudioPlayer } from 'expo-audio';
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSpeechRecognition } from '../../hooks/chat/use-speech-regonition';
 
+// type Props = { claims: JwtPayload }
 
 export default function ChatScreen() {
+
   return (
     <ChatProvider>
       <LinearGradient
@@ -44,15 +48,29 @@ export function ChatScreenContent() {
     startListening();
   }
 
+   const [claims, setClaims] = useState<JwtPayload | null>(null);
+  
+    useEffect(() => {
+      supabase.auth.getClaims().then(({ data }) => {
+        setClaims(data?.claims ?? null);
+      });
+  
+      supabase.auth.onAuthStateChange(() => {
+        supabase.auth.getClaims().then(({ data }) => {
+          setClaims(data?.claims ?? null);
+        });
+      });
+    }, []);
+
   const submitMessage = async (message: string, nextInput = '') => {
     const trimmedMessage = message.trim();
     if (trimmedMessage.length === 0) {
       return;
     }
-
+       
     addMessage(trimmedMessage, 'user');
     setQuestionInput(nextInput);
-    const audio = await askQuestion(trimmedMessage, addMessage, setIsAssistantThinking);
+    const audio = await askQuestion(trimmedMessage, addMessage, setIsAssistantThinking, claims);
     player.replace(audio);
     player.play();
   };
